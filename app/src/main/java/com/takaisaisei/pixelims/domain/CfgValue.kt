@@ -31,4 +31,23 @@ sealed interface CfgValue {
 
         override fun reload(prefs: SharedPreferences, key: String) = IntVal(prefs.getInt(key, v))
     }
+
+    /** Persisted as a comma-joined string since SharedPreferences has no int array type. */
+    data class IntArr(val v: IntArray) : CfgValue {
+        override fun putInto(bundle: PersistableBundle, key: String) = bundle.putIntArray(key, v)
+        override fun saveInto(editor: SharedPreferences.Editor, key: String) {
+            editor.putString(key, v.joinToString(","))
+        }
+
+        override fun reload(prefs: SharedPreferences, key: String) = IntArr(
+            prefs.getString(key, null)
+                ?.split(',')
+                ?.mapNotNull { it.trim().toIntOrNull() }
+                ?.toIntArray()
+                ?: v
+        )
+
+        override fun equals(other: Any?) = other is IntArr && v.contentEquals(other.v)
+        override fun hashCode() = v.contentHashCode()
+    }
 }

@@ -15,6 +15,7 @@
     <string name="feat_vowifi_short">VoWiFi</string>
     <string name="feat_wfc_roaming_short">Wi-Fi calling roaming</string>
     <string name="feat_ss_ut_short">Supplementary services (UT)</string>
+    <string name="feat_force_5g_short">5G (NR)</string>
 
     <!-- IMS settings card -->
     <string name="ims_settings_title">IMS settings</string>
@@ -28,6 +29,11 @@
     <string name="toggle_wfc_roaming_desc">Keep Wi-Fi calling enabled while roaming abroad</string>
     <string name="toggle_ss_ut_title">Supplementary services (UT)</string>
     <string name="toggle_ss_ut_desc">Carrier call forwarding, call waiting and similar settings</string>
+
+    <!-- Network settings -->
+    <string name="network_section_title">Network</string>
+    <string name="toggle_force_5g_title">Force 5G</string>
+    <string name="toggle_force_5g_desc">Enable 5G (NSA and SA) for this SIM even where the carrier or country is not officially supported. Pick 5G under Preferred network type afterwards. Still requires a 5G network your phone\'s bands cover</string>
 
     <!-- Cosmetic settings (status bar / network icons only) -->
     <string name="cosmetic_section_title">Cosmetic</string>

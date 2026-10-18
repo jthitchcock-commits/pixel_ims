@@ -11,7 +11,7 @@ fun SlotConfig.toCarrierOverrides(): PersistableBundle = PersistableBundle().app
         val enabled = this@toCarrierOverrides[feature]
         for (override in feature.overrides) {
             val user = this@toCarrierOverrides.value(override.key)
-            override.bundleValue(enabled, user).putInto(this, override.key)
+            override.bundleValue(enabled, user)?.putInto(this, override.key)
         }
     }
 }

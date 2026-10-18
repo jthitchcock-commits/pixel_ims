@@ -48,7 +48,7 @@ import com.takaisaisei.pixelims.domain.SlotStatus
 import com.takaisaisei.pixelims.telephony.WfcLabels
 
 // Presentation strings for a Feature - the UI's only feature-specific knowledge.
-// [shortRes] is only used by the status card, so cosmetic features (not shown there) may omit it.
+// [shortRes] is only used by the status card; features without one are left out of it.
 // [choiceLabelRes] labels the row of a feature's user-selectable choice.
 private data class ToggleText(
     val titleRes: Int,
@@ -83,6 +83,11 @@ private val TOGGLE_TEXT: Map<Feature, ToggleText> = mapOf(
         R.string.toggle_ss_ut_desc,
         R.string.feat_ss_ut_short
     ),
+    Feature.FORCE_5G to ToggleText(
+        R.string.toggle_force_5g_title,
+        R.string.toggle_force_5g_desc,
+        R.string.feat_force_5g_short
+    ),
     Feature.COSMETIC_DATA_RAT_ICON to ToggleText(
         R.string.toggle_cosmetic_data_rat_icon_title,
         R.string.toggle_cosmetic_data_rat_icon_desc,
@@ -104,8 +109,12 @@ private val TOGGLE_TEXT: Map<Feature, ToggleText> = mapOf(
 
 private val IMS_TOGGLES: List<Feature> =
     Feature.displayed.filter { it.category == FeatureCategory.IMS }
-private val COSMETIC_TOGGLES: List<Feature> =
-    Feature.displayed.filter { it.category == FeatureCategory.COSMETIC }
+
+// Categories rendered below the IMS toggles, each under its own header, in display order.
+private val SECTION_TITLES: List<Pair<FeatureCategory, Int>> = listOf(
+    FeatureCategory.NETWORK to R.string.network_section_title,
+    FeatureCategory.COSMETIC to R.string.cosmetic_section_title,
+)
 
 @SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -229,7 +238,7 @@ private fun StatusCard(status: SlotStatus) {
                 loaded = status.loaded,
                 ok = status.imsRegistered,
             )
-            IMS_TOGGLES.forEach { feature ->
+            Feature.displayed.forEach { feature ->
                 val shortRes = TOGGLE_TEXT.getValue(feature).shortRes ?: return@forEach
                 StatusRow(
                     label = stringResource(shortRes),
@@ -309,14 +318,16 @@ private fun SettingsCard(
                 )
             }
 
-            if (COSMETIC_TOGGLES.isNotEmpty()) {
+            SECTION_TITLES.forEach { (category, titleRes) ->
+                val toggles = Feature.displayed.filter { it.category == category }
+                if (toggles.isEmpty()) return@forEach
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 Text(
-                    text = stringResource(R.string.cosmetic_section_title),
+                    text = stringResource(titleRes),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                COSMETIC_TOGGLES.forEach { feature ->
+                toggles.forEach { feature ->
                     val text = TOGGLE_TEXT.getValue(feature)
                     ConfigToggle(
                         title = stringResource(text.titleRes),

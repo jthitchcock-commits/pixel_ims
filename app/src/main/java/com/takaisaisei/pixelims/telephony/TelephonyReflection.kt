@@ -2,6 +2,7 @@ package com.takaisaisei.pixelims.telephony
 
 import android.os.IBinder
 import android.os.PersistableBundle
+import com.takaisaisei.pixelims.domain.Override
 
 /**
  * Context-free reflective access to the privileged telephony interfaces.
@@ -46,11 +47,11 @@ object TelephonyReflection {
     }.getOrDefault(false)
 
     /**
-     * Reads the *effective* carrier configuration for [subId] and returns the boolean value of each
-     * requested [keys] entry. Runs unfiltered because the caller (the shell-uid `app_process`) holds
-     * `READ_PRIVILEGED_PHONE_STATE`. Missing keys default to false.
+     * Reads the *effective* carrier configuration for [subId] and returns, keyed by override key,
+     * whether each requested [overrides] entry is enabled there. Runs unfiltered because the caller
+     * (the shell-uid `app_process`) holds `READ_PRIVILEGED_PHONE_STATE`. Missing keys count as off.
      */
-    fun readFeatureConfig(subId: Int, keys: Collection<String>): Map<String, Boolean> =
+    fun readFeatureConfig(subId: Int, overrides: Collection<Override>): Map<String, Boolean> =
         runCatching {
             val loader =
                 asInterface(SERVICE_CARRIER_CONFIG, ICARRIER_CONFIG_LOADER) ?: return emptyMap()
@@ -72,7 +73,7 @@ object TelephonyReflection {
                             ).invoke(loader, subId, CALLER_PACKAGE)
                         }.getOrNull()
                     ) as? PersistableBundle ?: return emptyMap()
-            keys.associateWith { bundle.getBoolean(it, false) }
+            overrides.associate { it.key to it.isEnabledIn(bundle) }
         }.getOrDefault(emptyMap())
 
     // Looks up a system service binder and wraps it in its AIDL stub interface.
