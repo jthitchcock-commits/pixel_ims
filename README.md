@@ -7,6 +7,9 @@ Wi-Fi calling (VoWiFi) and more, configured per SIM.
 
 - **Turns on IMS features** by overriding the carrier configuration: VoLTE, VoNR (5G calling),
   VoWiFi, Wi-Fi calling while roaming, and supplementary services over UT.
+- **Force 5G** — enables 5G (NSA and SA) and unhides *Preferred network type* for SIMs whose
+  carrier or country Google hasn't enabled 5G for. A 5G network on bands your phone supports is
+  still required.
 - **Per-SIM control** — each SIM slot has its own toggles, status and actions.
 - **Live status** — shows the device's real IMS registration state and the *effective* carrier
   config for each feature, read straight from the system.

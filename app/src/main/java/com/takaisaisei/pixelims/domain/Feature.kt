@@ -1,7 +1,9 @@
 package com.takaisaisei.pixelims.domain
 
+import android.os.PersistableBundle
+
 /** Grouping used to render features under separate section headers. */
-enum class FeatureCategory { IMS, COSMETIC }
+enum class FeatureCategory { IMS, NETWORK, COSMETIC }
 
 /**
  * The single catalog of every IMS feature the app manages. Each entry owns all of its *behavior*:
@@ -73,6 +75,14 @@ enum class Feature(
         )
     ),
 
+    FORCE_5G(
+        "force_5g", default = false, userFacing = true,
+        category = FeatureCategory.NETWORK, overrides = listOf(
+            IntArrayOverride("carrier_nr_availabilities_int_array", intArrayOf(NR_NSA, NR_SA)),
+            BoolOverride("hide_preferred_network_type_bool", inverted = true, onlyWhenEnabled = true),
+        )
+    ),
+
     COSMETIC_DATA_RAT_ICON(
         "cosmetic_data_rat_icon", default = false, userFacing = true,
         category = FeatureCategory.COSMETIC, overrides = listOf(
@@ -101,8 +111,8 @@ enum class Feature(
     ),
     ;
 
-    /** The representative key read back to show the feature's effective on/off state. */
-    val effectiveKey: String get() = overrides.first().key
+    /** The representative override read back to show the feature's effective on/off state. */
+    val effectiveOverride: Override get() = overrides.first()
 
     /** The feature's user-selectable int override. */
     val intChoice: IntChoice? get() = overrides.filterIsInstance<IntChoice>().firstOrNull()
@@ -124,8 +134,14 @@ enum class Feature(
 sealed interface Override {
     val key: String
 
-    /** The value to write for the feature's [enabled] state and any [user]-selected value. */
-    fun bundleValue(enabled: Boolean, user: CfgValue?): CfgValue
+    /**
+     * The value to write for the feature's [enabled] state and any [user]-selected value, or null to
+     * leave the key out of the override so the carrier's own value applies.
+     */
+    fun bundleValue(enabled: Boolean, user: CfgValue?): CfgValue?
+
+    /** Whether the effective carrier config [bundle] has this override's key turned on. */
+    fun isEnabledIn(bundle: PersistableBundle): Boolean = bundle.getBoolean(key, false)
 
     /** Non-null for user-editable overrides: the persisted value until the user picks another. */
     val editableDefault: CfgValue? get() = null
@@ -134,15 +150,33 @@ sealed interface Override {
 /**
  * A boolean key derived from the toggle.
  * - [inverted]: store the negated feature value (e.g. "hide_*" keys);
- * - [const]: store this fixed value regardless of the feature value.
+ * - [const]: store this fixed value regardless of the feature value;
+ * - [onlyWhenEnabled]: only write the key while the feature is on, otherwise keep the carrier's value.
  */
 data class BoolOverride(
     override val key: String,
     val inverted: Boolean = false,
     val const: Boolean? = null,
+    val onlyWhenEnabled: Boolean = false,
 ) : Override {
-    override fun bundleValue(enabled: Boolean, user: CfgValue?): CfgValue =
-        CfgValue.Bool(const ?: (enabled != inverted))
+    override fun bundleValue(enabled: Boolean, user: CfgValue?): CfgValue? =
+        if (onlyWhenEnabled && !enabled) null
+        else CfgValue.Bool(const ?: (enabled != inverted))
+}
+
+/**
+ * An int array key written with [value] while the feature is on and left to the carrier when off.
+ * Counts as enabled when the effective array is non-empty.
+ */
+class IntArrayOverride(
+    override val key: String,
+    val value: IntArray,
+) : Override {
+    override fun bundleValue(enabled: Boolean, user: CfgValue?): CfgValue? =
+        if (enabled) CfgValue.IntArr(value) else null
+
+    override fun isEnabledIn(bundle: PersistableBundle): Boolean =
+        bundle.getIntArray(key)?.isNotEmpty() == true
 }
 
 /**
@@ -160,3 +194,7 @@ data class IntChoice(
     override fun bundleValue(enabled: Boolean, user: CfgValue?): CfgValue =
         CfgValue.IntVal(if (enabled) (user as? CfgValue.IntVal)?.v ?: default else offValue)
 }
+
+// CarrierConfigManager.CARRIER_NR_AVAILABILITY_* values.
+private const val NR_NSA = 1
+private const val NR_SA = 2

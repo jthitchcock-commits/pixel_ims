@@ -21,13 +21,13 @@ object ImsQueryTool {
 
             val features = Feature.displayed
             val effective =
-                TelephonyReflection.readFeatureConfig(subId, features.map { it.effectiveKey })
+                TelephonyReflection.readFeatureConfig(subId, features.map { it.effectiveOverride })
             features.forEach { feature ->
                 println(
                     BrokerContract.encodeFeature(
                         slot,
                         feature,
-                        effective[feature.effectiveKey] == true
+                        effective[feature.effectiveOverride.key] == true
                     )
                 )
             }
